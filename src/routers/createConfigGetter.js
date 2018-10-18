@@ -36,7 +36,13 @@ export default (routeConfigs, navigatorScreenConfig) => (
     'Cannot get config because the route does not have a routeName.'
   );
 
-  const Component = getScreenForRouteName(routeConfigs, route.routeName);
+  let routeConfigsResult = {}
+  if (typeof routeConfigs === 'function') {
+    routeConfigsResult = routeConfigs()
+  } else {
+    routeConfigsResult = routeConfigs
+  }
+  const Component = getScreenForRouteName(routeConfigsResult, route.routeName);
 
   let outputConfig = {};
 
@@ -60,7 +66,7 @@ export default (routeConfigs, navigatorScreenConfig) => (
     outputConfig = router.getScreenOptions(childNavigation, screenProps);
   }
 
-  const routeConfig = routeConfigs[route.routeName];
+  const routeConfig = routeConfigsResult[route.routeName];
 
   const routeScreenConfig = routeConfig.navigationOptions;
   const componentScreenConfig = Component.navigationOptions;
