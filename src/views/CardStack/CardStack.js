@@ -248,10 +248,14 @@ class CardStack extends React.Component {
     const { options } = this._getScreenDetails(scene);
     const gestureDirectionInverted = options.gestureDirection === 'inverted';
 
-    const gesturesEnabled =
+    let gesturesEnabled =
       typeof options.gesturesEnabled === 'boolean'
         ? options.gesturesEnabled
         : Platform.OS === 'ios';
+    // persist true when navigation is responding
+    if (typeof options.gesturesEnabled === 'boolean' && !options.gesturesEnabled && this._isResponding) {
+      gesturesEnabled = true
+    }
 
     const responder = !gesturesEnabled
       ? null
