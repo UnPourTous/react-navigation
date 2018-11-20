@@ -52,28 +52,46 @@ class Transitioner extends React.Component {
     this._isMounted = false;
   }
 
-  componentWillReceiveProps(nextProps) {
-    const nextScenes = NavigationScenesReducer(
+  _computeScenes (props, nextProps) {
+    let nextScenes = NavigationScenesReducer(
       this.state.scenes,
       nextProps.navigation.state,
-      this.props.navigation.state
+      props.navigation.state
     );
 
+    // Update nextScenes when we change screenProps
+    // This is a workaround for https://github.com/react-navigation/react-navigation/issues/4271
+    // if (nextProps.screenProps !== this.props.screenProps) {
+    //   this.setState({ nextScenes });
+    // }
+
     if (nextScenes === this.state.scenes) {
-      return;
+      return null;
     }
 
-    const indexHasChanged =
-      nextProps.navigation.state.index !== this.props.navigation.state.index;
-    if (this._isTransitionRunning) {
-      this._queuedTransition = { nextProps, nextScenes, indexHasChanged };
-      return;
-    }
-
-    this._startTransition(nextProps, nextScenes, indexHasChanged);
+    return nextScenes;
   }
 
-  _startTransition(nextProps, nextScenes, indexHasChanged) {
+  componentWillReceiveProps(nextProps) {
+    if (this._isTransitionRunning) {
+      // 如果已经有transition在跑，则缓存当前的nextProps，等结束完之后启动
+      if (this._queuedTransition) {
+        // 如果之前已经缓存过了，则这次只更新nextProps，props保存第一次获取的
+        this._queuedTransition.nextProps = nextProps
+      } else {
+        this._queuedTransition = {props: this.props, nextProps: nextProps}
+      }
+      return
+    }
+    const nextScenes = this._computeScenes(this.props, nextProps)
+    if (nextScenes) {
+      this._startTransition(this.props, nextProps, nextScenes)
+    }
+  }
+
+  _startTransition(props, nextProps, nextScenes) {
+    const indexHasChanged = nextProps.navigation.state.index !== props.navigation.state.index;
+
     const nextState = {
       ...this.state,
       scenes: nextScenes,
@@ -209,12 +227,17 @@ class Transitioner extends React.Component {
       }
 
       if (this._queuedTransition) {
-        this._startTransition(
-          this._queuedTransition.nextProps,
-          this._queuedTransition.nextScenes,
-          this._queuedTransition.indexHasChanged
-        );
-        this._queuedTransition = null;
+        const {
+          props,
+          nextProps
+        } = this._queuedTransition
+        const nextScenes = this._computeScenes(props, nextProps)
+        this._queuedTransition = null
+        if (nextScenes) {
+          this._startTransition(props, nextProps, nextScenes)
+        } else {
+          this._isTransitionRunning = false;
+        }
       } else {
         this._isTransitionRunning = false;
       }
