@@ -485,7 +485,7 @@ class Header extends React.PureComponent {
         style={containerStyles}
       >
         <View style={StyleSheet.absoluteFill}>{options.headerBackground}</View>
-        <View style={{ flex: 1 }}>{appBar}</View>
+        <View accessibilityViewIsModal style={{ flex: 1 }}>{appBar}</View>
       </SafeAreaView>
     );
   }
